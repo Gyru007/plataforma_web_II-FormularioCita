@@ -211,37 +211,83 @@ def crear_cita(cita: schemas.CitaCreate, db: Session = Depends(get_db)):
     db.commit()
     return {"success": True, "message": "Cita solicitada con éxito", "serial": result.lastrowid}
 
+# --- NUEVAS RUTAS Y ACTUALIZACIONES PARA CITAS ---
+
+class ReagendarRequest(BaseModel):
+    nueva_fecha: str
+
 @app.get("/api/consultar-cita/{identidad}")
 def consultar_cita(identidad: str, db: Session = Depends(get_db)):
-    # Buscamos la cita donde el texto "paciente_cita" contenga la identificación
-    # Y cruzamos con aaa_entes para obtener el nombre real del médico
+    # 1. Quitamos el LIMIT 1 para traer TODAS las citas
     sql = text("""
         SELECT c.*, m.nombreEnte as nombre_medico 
         FROM tbl_paci_agenda_citas c
         LEFT JOIN aaa_entes m ON c.id_medico = m.id_ente
         WHERE c.paciente_cita LIKE :ident
-        ORDER BY c.id_paci_agenda_citas DESC LIMIT 1
+        ORDER BY c.fecha_cita DESC, c.hora_cita DESC
     """)
     
-    cita_db = db.execute(sql, {"ident": f"%{identidad}%"}).fetchone()
+    resultados = db.execute(sql, {"ident": f"%{identidad}%"}).fetchall()
 
-    if cita_db:
-        cita_dict = dict(cita_db._mapping)
-        # Extraer el nombre del paciente del string concatenado
-        nombre_paciente = cita_dict["paciente_cita"]
-        if " / " in nombre_paciente:
-            partes = nombre_paciente.split(" / ")
-            if len(partes) >= 3:
-                nombre_paciente = partes[2]
+    if resultados:
+        citas = []
+        for row in resultados:
+            cita_dict = dict(row._mapping)
+            nombre_paciente = cita_dict["paciente_cita"]
+            if " / " in nombre_paciente:
+                partes = nombre_paciente.split(" / ")
+                if len(partes) >= 3:
+                    nombre_paciente = partes[2]
 
-        return {
-            "success": True,
-            "serial": cita_dict["id_paci_agenda_citas"],
-            "paciente": nombre_paciente,
-            "fecha": f"{cita_dict['fecha_cita']}T{cita_dict['hora_cita']}",
-            "especialidad": cita_dict["especialidad_medica"],
-            "medico": cita_dict["nombre_medico"] or "Sin asignar",
-            "status": cita_dict["status_cita"]
-        }
+            citas.append({
+                "serial": cita_dict["id_paci_agenda_citas"],
+                "paciente": nombre_paciente,
+                "fecha": f"{cita_dict['fecha_cita']}T{cita_dict['hora_cita']}",
+                "especialidad": cita_dict["especialidad_medica"],
+                "medico": cita_dict["nombre_medico"] or "Sin asignar",
+                "status": cita_dict["status_cita"]
+            })
+        return {"success": True, "citas": citas}
     else:
+        raise HTTPException(status_code=404, detail="No se encontraron citas")
+
+@app.put("/api/anular-cita/{id_cita}")
+def anular_cita(id_cita: int, db: Session = Depends(get_db)):
+    # Cambiamos el status a Anulado
+    sql = text("UPDATE tbl_paci_agenda_citas SET status_cita = 'Anulada' WHERE id_paci_agenda_citas = :id")
+    db.execute(sql, {"id": id_cita})
+    db.commit()
+    return {"success": True, "message": "Cita anulada correctamente"}
+
+@app.put("/api/reagendar-cita/{id_cita}")
+def reagendar_cita(id_cita: int, request: ReagendarRequest, db: Session = Depends(get_db)):
+    try:
+        fecha_obj = datetime.strptime(request.nueva_fecha.replace(" ", "T"), "%Y-%m-%dT%H:%M")
+        fecha = fecha_obj.strftime("%Y-%m-%d")
+        hora = fecha_obj.strftime("%H:%M")
+    except ValueError:
+        fecha = str(request.nueva_fecha).split("T")[0]
+        hora = str(request.nueva_fecha).split("T")[1][:5]
+
+    # Obtenemos la cita actual para reconstruir el string paciente_cita
+    sql_get = text("SELECT paciente_cita FROM tbl_paci_agenda_citas WHERE id_paci_agenda_citas = :id")
+    cita_actual = db.execute(sql_get, {"id": id_cita}).fetchone()
+    
+    if not cita_actual:
         raise HTTPException(status_code=404, detail="Cita no encontrada")
+        
+    partes = cita_actual[0].split(" / ")
+    if len(partes) >= 4:
+        partes[0] = hora # Actualizamos la hora en el string
+        nuevo_paciente_cita = " / ".join(partes)
+    else:
+        nuevo_paciente_cita = cita_actual[0]
+        
+    sql_update = text("""
+        UPDATE tbl_paci_agenda_citas 
+        SET fecha_cita = :fecha, hora_cita = :hora, paciente_cita = :paci_cita, status_cita = 'Activo'
+        WHERE id_paci_agenda_citas = :id
+    """)
+    db.execute(sql_update, {"fecha": fecha, "hora": hora, "paci_cita": nuevo_paciente_cita, "id": id_cita})
+    db.commit()
+    return {"success": True, "message": "Cita reagendada exitosamente"}
