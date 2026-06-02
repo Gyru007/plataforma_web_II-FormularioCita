@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 # 1. Configuramos la URL de conexión a tu MySQL
 # Formato: mysql+pymysql://usuario:contraseña@servidor/nombre_base_de_datos
 # ¡IMPORTANTE: Cambia "tu_contraseña" y "tu_base_mysql" por tus datos reales!
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:root@localhost:3306/ipswebve_webpaciente_demo_ver_6"
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root@localhost:3306/ipswebve_webpaciente_demo_ver_6"
 
 # 2. Creamos el "engine" (el motor que maneja la conexión real con MySQL)
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
