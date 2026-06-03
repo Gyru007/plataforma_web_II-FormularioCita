@@ -1,3 +1,4 @@
+import os
 from typing import List
 from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,7 @@ app = FastAPI(title="API Centro Médico Real Méndez")
 # Lista de orígenes permitidos
 origins = [
     "http://localhost:5173",
+    os.getenv("FRONTEND_URL", "*"), # Permitirá tu URL de Vercel configurada en Render
 ]
 
 # Configuración de CORS para permitir peticiones desde el Frontend

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const Login = () => {
   const { login } = useAuth(); // Importamos la función login desde nuestro contexto
   const navigate = useNavigate();
@@ -31,7 +33,7 @@ const Login = () => {
       urlEncodedData.append('password', formData.password);
 
       // Cambia la URL si tu backend está en otro puerto/dominio
-      const response = await fetch('http://localhost:8000/login', {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

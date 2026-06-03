@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const FormularioCita = () => {
   const [formData, setFormData] = useState({
     numero_identificacion: '', nombre_paciente: '', email_paciente: '', 
@@ -22,11 +24,11 @@ const FormularioCita = () => {
   const [nuevaFecha, setNuevaFecha] = useState('');
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/medicos')
+    fetch(`${API_BASE_URL}/api/medicos`)
       .then(res => res.json()).then(data => setMedicos(data))
       .catch(() => setServerError(true));
       
-    fetch('http://localhost:8000/api/especialidades')
+    fetch(`${API_BASE_URL}/api/especialidades`)
       .then(res => res.json()).then(data => setEspecialidades(data))
       .catch(() => setServerError(true));
   }, []);
@@ -40,7 +42,7 @@ const FormularioCita = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/verificar-paciente/${formData.numero_identificacion}`);
+      const response = await fetch(`${API_BASE_URL}/api/verificar-paciente/${formData.numero_identificacion}`);
       const data = await response.json();
       
       if (data.exists) {
@@ -66,7 +68,7 @@ const FormularioCita = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/crear-cita', {
+      const response = await fetch(`${API_BASE_URL}/api/crear-cita`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -92,7 +94,7 @@ const FormularioCita = () => {
     setCitasEncontradas([]); 
     
     try {
-      const response = await fetch(`http://localhost:8000/api/consultar-cita/${identidadBusqueda}`);
+      const response = await fetch(`${API_BASE_URL}/api/consultar-cita/${identidadBusqueda}`);
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -110,7 +112,7 @@ const FormularioCita = () => {
     if (!window.confirm("¿Estás seguro que deseas anular esta cita? Esta acción no se puede deshacer.")) return;
     
     try {
-      const response = await fetch(`http://localhost:8000/api/anular-cita/${id_cita}`, { method: 'PUT' });
+      const response = await fetch(`${API_BASE_URL}/api/anular-cita/${id_cita}`, { method: 'PUT' });
       if (response.ok) {
         alert("Cita anulada correctamente.");
         handleSearchCita(); // Recarga la lista
@@ -125,7 +127,7 @@ const FormularioCita = () => {
     if (!nuevaFecha) return alert("Por favor, selecciona una nueva fecha y hora.");
     
     try {
-      const response = await fetch(`http://localhost:8000/api/reagendar-cita/${id_cita}`, {
+      const response = await fetch(`${API_BASE_URL}/api/reagendar-cita/${id_cita}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nueva_fecha: nuevaFecha })
