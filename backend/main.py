@@ -16,15 +16,16 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(title="API Centro Médico Real Méndez")
 
 # Lista de orígenes permitidos
-origins = [
-    "http://localhost:5173",
-    os.getenv("FRONTEND_URL", "*"), # Aquí irá tu URL de Vercel
-]
+frontend_url = os.getenv("FRONTEND_URL")
+origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+if frontend_url:
+    origins.append(frontend_url)
 
 # Configuración de CORS para permitir peticiones desde el Frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins if frontend_url else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -52,21 +52,13 @@ class Medico(MedicoBase):
 
 # --- Schemas para el Módulo de Conversión (Citas) ---
 class CitaCreate(BaseModel):
-    nombre_paciente: str
-    email_paciente: EmailStr
-    telefono_paciente: str
-    fecha_cita: datetime
-    motivo: str
-    medico_id: int
-
-class CitaCreate(BaseModel):
     numero_identificacion: str
     nombre_paciente: str
     email_paciente: str
     telefono_paciente: str
     fecha_cita: str
-    especialidad_id: str  # <--- Este es el campo que te falta
-    medico_id: str        # <--- Asegúrate de tener este también
+    especialidad_id: str
+    medico_id: str
     motivo: str
 
 # --- Schemas para el Blog ---

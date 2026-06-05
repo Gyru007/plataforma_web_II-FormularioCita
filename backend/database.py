@@ -10,7 +10,7 @@ load_dotenv()
 # Intentar obtener la URL de la base de datos desde las variables de entorno.
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "mysql+pymysql://root@localhost:3306/nombre_tu_bd_local"
+    "mysql+pymysql://root@localhost:3306/ipswebve_webpaciente_demo_ver_6"
 )
 
 # 2. Creamos el "engine" (el motor que maneja la conexión real con MySQL)
