@@ -1,0 +1,43 @@
+Flujo de Comandos en el Servidor (Terminal)
+Ejecuta estos pasos en orden para un despliegue limpio:
+
+A) Instalación de Dependencias del Sistema
+bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y nginx mysql-server python3-pip python3-venv git
+# Configura MySQL (pon password al root y crea la base de datos)
+sudo mysql_secure_installation
+B) Preparación del Frontend (En tu PC local)
+Para no sobrecargar el VPS con procesos de compilación Node.js, es mejor construir localmente y subir el resultado:
+
+bash
+ Show full code block 
+# En tu PC local
+cd frontend
+npm install
+npm run build
+# Sube la carpeta 'dist' al servidor usando SCP o SFTP
+scp -r dist/ usuario@tu-vps:/var/www/plataforma_web/frontend/
+C) Configuración del Backend (En el VPS)
+bash
+cd /var/www/plataforma_web/backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+# Asegúrate de que el archivo .env esté presente aquí
+D) Activación de Servicios
+bash
+ Show full code block 
+# 1. Ajustar permisos
+sudo chown -R www-data:www-data /var/www/plataforma_web
+
+# 2. Iniciar Backend
+sudo systemctl start fastapi
+sudo systemctl enable fastapi
+
+# 3. Configurar Nginx
+sudo ln -s /etc/nginx/sites-available/plataforma_web /etc/nginx/sites-enabled/
+sudo nginx -t # Validar sintaxis
+sudo systemctl restart nginx
+Consideración Final de Seguridad
+Para un entorno de producción real, una vez que el dominio esté apuntando al VPS, te recomiendo instalar Certbot para habilitar HTTPS (Puerto 443) de forma gratuita: sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx
